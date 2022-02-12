@@ -33,11 +33,29 @@
     (modify-syntax-entry ?\n ">")
     table))
 
+(defvar git-commit-msg-font-lock-keywords
+  `((,(rx line-start "#" (+ space) (group (or (seq "Changes" (* nonl) ":")
+                                              "Untracked files:")))
+     1 font-lock-keyword-face t)
+    ,@(let ((changes '(("deleted"  . font-lock-warning-face)
+                       ("modified" . font-lock-variable-name-face)
+                       ("new file" . font-lock-string-face)
+                       ("renamed"  . font-lock-builtin-face))))
+        (mapcar (lambda (change)
+                  `(,(rx-to-string `(seq line-start "#" (+ space)
+                                         (group ,(car change) ":")))
+                    (1 ,(cdr change) t)
+                    (".*" nil nil (0 'default t))))
+                changes)))
+  "Keywords to highlight in Git Commit mode.")
+
 ;;;###autoload
 (define-derived-mode git-commit-msg-mode text-mode "Git Commit"
   (setq-local font-lock-keywords '(git-common-syntax-table))
   (setq-local syntax-propertize-function
-              (syntax-propertize-rules (".\\(#\\)" (1 ".")))))
+              (syntax-propertize-rules (".\\(#\\)" (1 "."))))
+  (setq-local font-lock-defaults
+              '(git-commit-msg-font-lock-keywords)))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/COMMIT_EDITMSG\\'" . git-commit-msg-mode))

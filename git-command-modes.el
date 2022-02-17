@@ -34,8 +34,12 @@
     table))
 
 (defvar git-commit-msg-font-lock-keywords
-  `((,(rx line-start "#" (+ space) (group (or (seq "Changes" (* nonl) ":")
-                                              "Untracked files:")))
+  `((,(rx line-start "#" (+ space)
+          (group (or (seq "Last commands done" (* nonl))
+                     (seq "Next commands to do" (* nonl))
+                     (seq "Changes" (* nonl))
+                     "Untracked files")
+                 ":"))
      1 font-lock-keyword-face t)
     ,@(let ((changes '(("deleted"  . font-lock-warning-face)
                        ("modified" . font-lock-variable-name-face)

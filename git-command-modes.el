@@ -31,11 +31,13 @@
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?# "<")
     (modify-syntax-entry ?\n ">")
-    table))
+    table)
+  "Syntax table for Git command files.")
 
 (defun git-rebase-todo--match-keyword (prefix name shorthand &optional face)
   "Return a font-lock matcher for the Git Rebase keyword NAME.
 SHORTHAND is the single-character shorthand for the keyword.
+PREFIX is a list of `rx' forms that should precede the keyword.
 FACE, if non-nil, is the face to use for the keyword; otherwise,
 use `font-lock-keyword-face.'"
   `(,(rx-to-string `(seq ,@prefix
@@ -64,7 +66,7 @@ use `font-lock-keyword-face.'"
   "A font-lock highlighter matching a Git label following a space.")
 
 (defun git-rebase-todo--font-lock-keywords (prefix)
-  "Return a list of font-lock-keywords for Git Rebase Todo commands.
+  "Return a list of font-lock keywords for Git Rebase Todo commands.
 PREFIX is a list of `rx' forms that should precede each command."
   `(;; Commands taking a commit.
     ,@(let ((cmds '(("pick"   "p")
@@ -144,12 +146,14 @@ PREFIX is a list of `rx' forms that should precede each command."
   "Keywords to highlight in Git Rebase mode.")
 
 (defun git-rebase-todo-move-up (&optional lines)
-  "Move the current rebase command up one line."
+  "Move the current rebase command up one line.
+If LINES is non-nil, move up that many lines."
   (interactive "p")
   (git-rebase-todo-move-down (- lines)))
 
 (defun git-rebase-todo-move-down (&optional lines)
-  "Move the current rebase command down one line."
+  "Move the current rebase command down one line.
+If LINES is non-nil, move down that many lines."
   (interactive "p")
   (let ((column (current-column)))
     (unless (eq (forward-line) 0)

@@ -27,6 +27,43 @@
 
 (eval-when-compile (require 'subr-x))
 
+(defgroup git-command-modes nil
+  "Major modes for Git commands"
+  :group 'vc)
+
+(defface git-command-section-heading '((t :inherit font-lock-keyword-face))
+  "Face for section headings.")
+
+(defface git-commit '((t :inherit font-lock-variable-name-face))
+  "Face for commit hashes.")
+
+(defface git-file-deleted '((t :inherit font-lock-warning-face))
+  "Face for deleted file indicator.")
+
+(defface git-file-modified '((t :inherit font-lock-variable-name-face))
+  "Face for modified file indicator.")
+
+(defface git-file-new '((t :inherit font-lock-string-face))
+  "Face for new file indicator.")
+
+(defface git-file-renamed '((t :inherit font-lock-builtin-face))
+  "Face for renamed file indicator.")
+
+(defface git-rebase-command '((t :inherit font-lock-keyword-face))
+  "Face for commands when rebasing.")
+
+(defface git-rebase-drop-command '((t :inherit font-lock-warning-face))
+  "Face for the \"drop\" command when rebasing.")
+
+(defface git-rebase-break-command '((t :inherit font-lock-type-face))
+  "Face for the \"break\" command when rebasing.")
+
+(defface git-rebase-label '((t :inherit font-lock-builtin-face))
+  "Face for labels when rebasing.")
+
+(defface git-rebase-flag '((t :inherit font-lock-constant-face))
+  "Face for command flags when rebasing.")
+
 (defvar git-common-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?# "<")
@@ -39,11 +76,11 @@
 SHORTHAND is the single-character shorthand for the keyword.
 PREFIX is a list of `rx' forms that should precede the keyword.
 FACE, if non-nil, is the face to use for the keyword; otherwise,
-use `font-lock-keyword-face.'"
+use `git-rebase-command'."
   `(,(rx-to-string `(seq ,@prefix
                          (group (or ,name ,shorthand))
                          symbol-end))
-    (1 (list 'face ,(or face 'font-lock-keyword-face)
+    (1 (list 'face ',(or face 'git-rebase-command)
              'git-rebase-todo-command ',(intern name))
        t)))
 
@@ -54,7 +91,7 @@ use `font-lock-keyword-face.'"
 (defconst git-rebase-todo--match-commit
   `(,(rx-to-string `(seq point (+ space)
                          (group ,git-rebase-todo--commit-rx)))
-    nil nil (1 font-lock-variable-name-face t))
+    nil nil (1 'git-commit t))
   "A font-lock highlighter matching a Git commit hash following a space.")
 
 (defconst git-rebase-todo--match-label
@@ -62,7 +99,7 @@ use `font-lock-keyword-face.'"
                          (group symbol-start
                                 (+ alnum)
                                 symbol-end)))
-    nil nil (1 font-lock-builtin-face t))
+    nil nil (1 'git-rebase-label t))
   "A font-lock highlighter matching a Git label following a space.")
 
 (defun git-rebase-todo--font-lock-keywords (prefix)
@@ -73,7 +110,7 @@ PREFIX is a list of `rx' forms that should precede each command."
                     ("reword" "r")
                     ("edit"   "e")
                     ("squash" "s")
-                    ("drop"   "p" font-lock-warning-face))))
+                    ("drop"   "p" 'git-rebase-drop-command))))
         (mapcar (lambda (cmd)
                   `(,@(apply #'git-rebase-todo--match-keyword prefix cmd)
                     ,git-rebase-todo--match-commit
@@ -89,7 +126,7 @@ PREFIX is a list of `rx' forms that should precede each command."
                 cmds))
     ;; Miscellaneous commands.
     ,@(let ((cmds '(("exec" "x")
-                    ("break" "b" font-lock-type-face))))
+                    ("break" "b" 'git-rebase-break-command))))
         (mapcar (lambda (cmd)
                   (apply #'git-rebase-todo--match-keyword prefix cmd))
                 cmds))
@@ -98,7 +135,7 @@ PREFIX is a list of `rx' forms that should precede each command."
      (,(rx-to-string '(seq point (+ space)
                            (group (or "-c" "-C"))))
       nil nil (0 '(face nil git-rebase-todo-command fixup) t)
-      (1 font-lock-constant-face t))
+      (1 'git-rebase-flag t))
      ,git-rebase-todo--match-commit)
     ;; Merge command.
     (,@(git-rebase-todo--match-keyword prefix "merge" "m")
@@ -106,7 +143,7 @@ PREFIX is a list of `rx' forms that should precede each command."
                            (group (or "-c" "-C"))
                            (+ space)
                            (group ,git-rebase-todo--commit-rx)))
-      nil nil (1 font-lock-constant-face t) (2 font-lock-variable-name-face t))
+      nil nil (1 'git-rebase-flag t) (2 'git-commit t))
      ,git-rebase-todo--match-label)))
 
 (defvar git-commit-msg-font-lock-keywords
@@ -116,11 +153,11 @@ PREFIX is a list of `rx' forms that should precede each command."
                      (seq "Changes" (* nonl))
                      "Untracked files")
                  ":"))
-     1 font-lock-keyword-face t)
-    ,@(let ((changes '(("deleted"  . font-lock-warning-face)
-                       ("modified" . font-lock-variable-name-face)
-                       ("new file" . font-lock-string-face)
-                       ("renamed"  . font-lock-builtin-face))))
+     1 'git-command-section-heading t)
+    ,@(let ((changes '(("deleted"  . 'git-file-deleted)
+                       ("modified" . 'git-file-modified)
+                       ("new file" . 'git-file-new)
+                       ("renamed"  . 'git-file-renamed))))
         (mapcar (lambda (change)
                   `(,(rx-to-string `(seq line-start "#" (+ space)
                                          (group ,(car change) ":")))

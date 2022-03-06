@@ -310,20 +310,31 @@ command to be inserted on the line after point."
   (interactive "P")
   (git-rebase-todo-insert-command-at-point 'break nil after))
 
+(defvar git-rebase-todo-label-history nil)
+
+(defun git-rebase-todo--read-label ()
+  "Read a Git Rebase label from the minibuffer."
+  (read-string
+   (concat "Label"
+           (when git-rebase-todo-label-history
+             (concat " (default " (car git-rebase-todo-label-history) ")"))
+           ": ")
+   nil 'git-rebase-todo-label-history (car git-rebase-todo-label-history)))
+
 (defun git-rebase-todo-insert-label-at-point (name &optional after)
   "Insert a \"label\" command with label NAME on the line before point.
 AFTER, if non-nil, causes the command to be inserted on the line
 after point."
-  ;; TODO: Support completion on labels.
-  (interactive "MLabel: \nP")
+  (interactive
+   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
   (git-rebase-todo-insert-command-at-point 'label name after))
 
 (defun git-rebase-todo-insert-reset-at-point (name &optional after)
   "Insert a \"reset\" command with label NAME on the line before point.
 AFTER, if non-nil, causes the command to be inserted on the line
 after point."
-  ;; TODO: Support completion on labels.
-  (interactive "MLabel: \nP")
+  (interactive
+   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
   (git-rebase-todo-insert-command-at-point 'reset name after))
 
 ;; TODO: Support inserting `merge' command.

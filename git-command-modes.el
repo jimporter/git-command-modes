@@ -337,7 +337,16 @@ after point."
    (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
   (git-rebase-todo-insert-command-at-point 'reset name after))
 
-;; TODO: Support inserting `merge' command.
+(defun git-rebase-todo-insert-merge-at-point (name &optional after)
+  "Insert a \"merge\" command with label NAME on the line before point.
+AFTER, if non-nil, causes the command to be inserted on the line
+after point."
+  (interactive
+   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
+  ;; TODO: Support -C/-c.  Maybe it would be better to use the prefix arg for
+  ;; this like fixup, and handle inserting after the current line via a new
+  ;; key binding like C-c C-M?
+  (git-rebase-todo-insert-command-at-point 'merge name after))
 
 (defvar git-rebase-todo-mode-map
   (let ((map (make-sparse-keymap)))
@@ -355,6 +364,7 @@ after point."
     (define-key map (kbd "C-c C-b") #'git-rebase-todo-insert-break-at-point)
     (define-key map (kbd "C-c C-l") #'git-rebase-todo-insert-label-at-point)
     (define-key map (kbd "C-c C-t") #'git-rebase-todo-insert-reset-at-point)
+    (define-key map (kbd "C-c C-m") #'git-rebase-todo-insert-merge-at-point)
     map)
   "Keymap for Git Rebase buffers.")
 

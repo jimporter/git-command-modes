@@ -81,6 +81,7 @@ use `git-rebase-command'."
                          (group (or ,name ,shorthand))
                          symbol-end))
     (1 (list 'face ',(or face 'git-rebase-command)
+             ;; FIXME: This doesn't get cleared properly when editing the file.
              'git-rebase-todo-command ',(intern name))
        t)))
 

@@ -111,7 +111,7 @@ PREFIX is a list of `rx' forms that should precede each command."
                     ("reword" "r")
                     ("edit"   "e")
                     ("squash" "s")
-                    ("drop"   "p" 'git-rebase-drop-command))))
+                    ("drop"   "d" 'git-rebase-drop-command))))
         (mapcar (lambda (cmd)
                   `(,@(apply #'git-rebase-todo--match-keyword prefix cmd)
                     ,git-rebase-todo--match-commit

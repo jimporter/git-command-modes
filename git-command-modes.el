@@ -81,7 +81,6 @@ use `git-rebase-command'."
                          (group (or ,name ,shorthand))
                          symbol-end))
     (1 (list 'face ',(or face 'git-rebase-command)
-             ;; FIXME: This doesn't get cleared properly when editing the file.
              'git-rebase-todo-command ',(intern name))
        t)))
 
@@ -170,11 +169,11 @@ PREFIX is a list of `rx' forms that should precede each command."
 
 ;;;###autoload
 (define-derived-mode git-commit-msg-mode text-mode "Git Commit"
-  (setq-local font-lock-keywords '(git-common-syntax-table))
+  (setq-local font-lock-keywords '(git-common-syntax-table)
+              font-lock-defaults '(git-commit-msg-font-lock-keywords)
+              font-lock-extra-managed-props '(git-rebase-todo-command))
   (setq-local syntax-propertize-function
-              (syntax-propertize-rules (".\\(#\\)" (1 "."))))
-  (setq-local font-lock-defaults
-              '(git-commit-msg-font-lock-keywords)))
+              (syntax-propertize-rules (".\\(#\\)" (1 ".")))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/COMMIT_EDITMSG\\'" . git-commit-msg-mode))
@@ -408,11 +407,11 @@ after point."
 
 ;;;###autoload
 (define-derived-mode git-rebase-todo-mode nil "Git Rebase"
-  (setq-local font-lock-keywords '(git-common-syntax-table))
+  (setq-local font-lock-keywords '(git-common-syntax-table)
+              font-lock-defaults '(git-rebase-todo-font-lock-keywords)
+              font-lock-extra-managed-props '(git-rebase-todo-command))
   (setq-local syntax-propertize-function
-              (syntax-propertize-rules (".\\(#\\)" (1 "."))))
-  (setq-local font-lock-defaults
-              '(git-rebase-todo-font-lock-keywords)))
+              (syntax-propertize-rules (".\\(#\\)" (1 ".")))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/git-rebase-todo\\'" . git-rebase-todo-mode))

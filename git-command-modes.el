@@ -249,8 +249,9 @@ command.  This is useful if the command takes optional flags."
                   (user-error "Previous command is not a commit"))
               (user-error "No previous command")))
           ;; Replace the old command with the new one.
-          (let ((command-end (next-single-property-change
-                              (point) 'git-rebase-todo-command)))
+          (let ((command-end (or (next-single-property-change
+                                  (point) 'git-rebase-todo-command)
+                                 (point-max))))
             (delete-region (point) command-end)
             (insert (symbol-name command))
             (when extra (insert " " extra))))

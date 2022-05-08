@@ -211,42 +211,61 @@ commit command."
   "Return non-nil if COMMAND folds a commit into a previous commit command."
   (memq command '(squash fixup)))
 
-(defun git-rebase-todo-replace-command-at-point (command &optional extra)
-  "If the current command at point is a commit command, replace it with COMMAND.
+(defun git-rebase-todo-replace-command-in-region (command &optional beg end
+                                                          extra)
+  "If the commands in the region are commit commands, replace them with COMMAND.
 This allows replacing a command like \"pick\" with \"squash\",
-for example.  EXTRA, if non-nil, is a string of extra data to
-append to the command. This is useful if the command takes
-optional flags."
+for example.
+
+The region is defined by BEG and END.  If BEG is nil, use the
+current point.  If END is nil, use the minimum of BEG + 1 and
+`point-max'.
+
+EXTRA, if non-nil, is a string of extra data to append to the
+command.  This is useful if the command takes optional flags."
   (unless (git-rebase-todo-commit-command-p command t)
     (error "Invalid command type %S" command))
-  (save-excursion
-    (beginning-of-line)
-    (let ((old-command (get-text-property (point) 'git-rebase-todo-command)))
-      (unless old-command
-        (user-error "No command here"))
-      (unless (git-rebase-todo-commit-command-p old-command t)
-        (user-error "Not a commit"))
-      (when (git-rebase-todo-fold-command-p command)
-        (if-let ((prev-point (previous-single-property-change
+  (unless beg
+    (setq beg (point)))
+  (unless end
+    (setq end (min (1+ beg) (point-max))))
+  (let ((end-marker (copy-marker end)))
+    (save-excursion
+      (goto-char beg)
+      (beginning-of-line)
+      (while (< (point-marker) end-marker)
+        (let ((old-command (get-text-property
+                            (point) 'git-rebase-todo-command)))
+          (unless old-command
+            (user-error "No command here"))
+          (unless (git-rebase-todo-commit-command-p old-command t)
+            (user-error "Not a commit"))
+          (when (git-rebase-todo-fold-command-p command)
+            (if-let ((prev-point (previous-single-property-change
+                                  (point) 'git-rebase-todo-command)))
+                (unless (git-rebase-todo-commit-command-p
+                         (get-text-property (1- prev-point)
+                                            'git-rebase-todo-command))
+                  (user-error "Previous command is not a commit"))
+              (user-error "No previous command")))
+          ;; Replace the old command with the new one.
+          (let ((command-end (next-single-property-change
                               (point) 'git-rebase-todo-command)))
-            (unless (git-rebase-todo-commit-command-p
-                     (get-text-property (1- prev-point)
-                                        'git-rebase-todo-command))
-              (user-error "Previous command is not a commit"))
-          (user-error "No previous command")))
-      ;; Replace the old command with the new one.
-      (let ((command-end (next-single-property-change
-                          (point) 'git-rebase-todo-command)))
-        (delete-region (point) command-end)
-        (insert (symbol-name command))
-        (when extra (insert " " extra))))))
+            (delete-region (point) command-end)
+            (insert (symbol-name command))
+            (when extra (insert " " extra))))
+        (forward-line 1)))))
 
-(defun git-rebase-todo-insert-command-at-point (command &optional extra after)
-  "Insert COMMAND on the line before point.
-EXTRA, if non-nil, is a string of extra arguments to include
-after COMMAND.  AFTER, if non-nil, causes the command to be
-inserted on the line after point."
+(defun git-rebase-todo-insert-command-at-point (command &optional point extra
+                                                        after)
+  "Insert COMMAND on the line before POINT.
+If POINT is nil, use the current point.  EXTRA, if non-nil, is a
+string of extra arguments to include after COMMAND.  AFTER, if
+non-nil, causes the command to be inserted on the line after
+point."
   (save-excursion
+    (when point
+      (goto-char point))
     (when after
       (forward-line 1))
     (beginning-of-line)
@@ -254,61 +273,68 @@ inserted on the line after point."
     (when extra (insert " " extra))
     (insert "\n")))
 
-(defun git-rebase-todo-set-pick-at-point ()
-  "Set the current command at point to \"pick\"."
-  (interactive)
-  (git-rebase-todo-replace-command-at-point 'pick))
+(defun git-rebase-todo-region-or-point ()
+  "Return the region if the region is active, otherwise return the point.
+This always returns a list of the form (BEGIN END-OR-NIL)."
+  (if (region-active-p)
+      (list (region-beginning) (region-end))
+    (list (point) nil)))
 
-(defun git-rebase-todo-set-reword-at-point ()
-  "Set the current command at point to \"reword\"."
-  (interactive)
-  (git-rebase-todo-replace-command-at-point 'reword))
+(defun git-rebase-todo-set-pick (&optional beg end)
+  "Set the commands in the region from BEG to END to \"pick\"."
+  (interactive (git-rebase-todo-region-or-point))
+  (git-rebase-todo-replace-command-in-region 'pick))
 
-(defun git-rebase-todo-set-edit-at-point ()
-  "Set the current command at point to \"edit\"."
-  (interactive)
-  (git-rebase-todo-replace-command-at-point 'edit))
+(defun git-rebase-todo-set-reword (&optional beg end)
+  "Set the commands in the region from BEG to END to \"reword\"."
+  (interactive (git-rebase-todo-region-or-point))
+  (git-rebase-todo-replace-command-in-region 'reword))
 
-(defun git-rebase-todo-set-squash-at-point ()
-  "Set the current command at point to \"squash\"."
-  (interactive)
-  (git-rebase-todo-replace-command-at-point 'squash))
+(defun git-rebase-todo-set-edit (&optional beg end)
+  "Set the commands in the region from BEG to END to \"edit\"."
+  (interactive (git-rebase-todo-region-or-point))
+  (git-rebase-todo-replace-command-in-region 'edit))
 
-(defun git-rebase-todo-set-fixup-at-point (&optional flag)
-  "Set the current command at point to \"fixup\".
+(defun git-rebase-todo-set-squash (&optional beg end)
+  "Set the commands in the region from BEG to END to \"squash\"."
+  (interactive (git-rebase-todo-region-or-point))
+  (git-rebase-todo-replace-command-in-region 'squash))
+
+(defun git-rebase-todo-set-fixup (&optional beg end flag)
+  "Set the commands in the region from BEG to END to \"fixup\".
 
 With \\[universal-argument] prefix, set the \"-c\" flag (use the commit message of
 the current commit for the folded commit, and allow editing the
 message).  With two \\[universal-argument] prefixes, set the \"-C\" flag (use the
 commit message of the current commit, and don't edit the message)."
-  (interactive "P")
+  (interactive (append (git-rebase-todo-region-or-point)
+                       (list current-prefix-arg)))
   (let ((arg (cond
               ((not flag) nil)
               ((= (prefix-numeric-value flag) 4) "-c")
               (t "-C"))))
-    (git-rebase-todo-replace-command-at-point 'fixup arg)))
+    (git-rebase-todo-replace-command-in-region 'fixup beg end arg)))
 
-(defun git-rebase-todo-set-drop-at-point ()
-  "Set the current command at point to \"drop\"."
-  (interactive)
-  (git-rebase-todo-replace-command-at-point 'drop))
+(defun git-rebase-todo-set-drop (&optional beg end)
+  "Set the commands in the region from BEG to END to \"drop\"."
+  (interactive (git-rebase-todo-region-or-point))
+  (git-rebase-todo-replace-command-in-region 'drop beg end))
 
-(defun git-rebase-todo-insert-exec-at-point (command &optional after)
-  "Insert an \"exec\" command on the line before point.
+(defun git-rebase-todo-insert-exec (command &optional point after)
+  "Insert an \"exec\" command on the line before POINT.
 COMMAND is the command to execute.  AFTER, if non-nil, causes the
 command to be inserted on the line after point."
-  (interactive
-   (list
-    (read-shell-command "Command: ")
-    (consp current-prefix-arg)))
-  (git-rebase-todo-insert-command-at-point 'exec command after))
+  (interactive (list (read-shell-command "Command: ")
+                     (point)
+                     current-prefix-arg))
+  (git-rebase-todo-insert-command-at-point 'exec point command after))
 
-(defun git-rebase-todo-insert-break-at-point (&optional after)
-  "Insert an \"exec\" command on the line before point.
+(defun git-rebase-todo-insert-break (&optional point after)
+  "Insert an \"exec\" command on the line before POINT.
 COMMAND is the command to execute.  AFTER, if non-nil, causes the
 command to be inserted on the line after point."
-  (interactive "P")
-  (git-rebase-todo-insert-command-at-point 'break nil after))
+  (interactive "d\nP")
+  (git-rebase-todo-insert-command-at-point 'break point nil after))
 
 (defvar git-rebase-todo-label-history nil)
 
@@ -321,32 +347,35 @@ command to be inserted on the line after point."
            ": ")
    nil 'git-rebase-todo-label-history (car git-rebase-todo-label-history)))
 
-(defun git-rebase-todo-insert-label-at-point (name &optional after)
-  "Insert a \"label\" command with label NAME on the line before point.
+(defun git-rebase-todo-insert-label (name &optional point after)
+  "Insert a \"label\" command with label NAME on the line before POINT.
 AFTER, if non-nil, causes the command to be inserted on the line
 after point."
-  (interactive
-   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
-  (git-rebase-todo-insert-command-at-point 'label name after))
+  (interactive (list (git-rebase-todo--read-label)
+                     (point)
+                     current-prefix-arg))
+  (git-rebase-todo-insert-command-at-point 'label point name after))
 
-(defun git-rebase-todo-insert-reset-at-point (name &optional after)
-  "Insert a \"reset\" command with label NAME on the line before point.
+(defun git-rebase-todo-insert-reset (name &optional point after)
+  "Insert a \"reset\" command with label NAME on the line before POINT.
 AFTER, if non-nil, causes the command to be inserted on the line
 after point."
-  (interactive
-   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
-  (git-rebase-todo-insert-command-at-point 'reset name after))
+  (interactive (list (git-rebase-todo--read-label)
+                     (point)
+                     current-prefix-arg))
+  (git-rebase-todo-insert-command-at-point 'reset point name after))
 
-(defun git-rebase-todo-insert-merge-at-point (name &optional after)
-  "Insert a \"merge\" command with label NAME on the line before point.
+(defun git-rebase-todo-insert-merge (name &optional point after)
+  "Insert a \"merge\" command with label NAME on the line before POINT.
 AFTER, if non-nil, causes the command to be inserted on the line
 after point."
-  (interactive
-   (list (git-rebase-todo--read-label) (consp current-prefix-arg)))
+  (interactive (list (git-rebase-todo--read-label)
+                     (point)
+                     current-prefix-arg))
   ;; TODO: Support -C/-c.  Maybe it would be better to use the prefix arg for
   ;; this like fixup, and handle inserting after the current line via a new
   ;; key binding like C-c C-M?
-  (git-rebase-todo-insert-command-at-point 'merge name after))
+  (git-rebase-todo-insert-command-at-point 'merge point name after))
 
 (defvar git-rebase-todo-mode-map
   (let ((map (make-sparse-keymap)))
@@ -354,17 +383,17 @@ after point."
     (define-key map (kbd "ESC <up>") #'git-rebase-todo-move-up)
     (define-key map (kbd "M-<down>") #'git-rebase-todo-move-down)
     (define-key map (kbd "ESC <down>") #'git-rebase-todo-move-down)
-    (define-key map (kbd "C-c C-p") #'git-rebase-todo-set-pick-at-point)
-    (define-key map (kbd "C-c C-r") #'git-rebase-todo-set-reword-at-point)
-    (define-key map (kbd "C-c C-e") #'git-rebase-todo-set-edit-at-point)
-    (define-key map (kbd "C-c C-s") #'git-rebase-todo-set-squash-at-point)
-    (define-key map (kbd "C-c C-f") #'git-rebase-todo-set-fixup-at-point)
-    (define-key map (kbd "C-c C-d") #'git-rebase-todo-set-drop-at-point)
-    (define-key map (kbd "C-c C-x") #'git-rebase-todo-insert-exec-at-point)
-    (define-key map (kbd "C-c C-b") #'git-rebase-todo-insert-break-at-point)
-    (define-key map (kbd "C-c C-l") #'git-rebase-todo-insert-label-at-point)
-    (define-key map (kbd "C-c C-t") #'git-rebase-todo-insert-reset-at-point)
-    (define-key map (kbd "C-c C-m") #'git-rebase-todo-insert-merge-at-point)
+    (define-key map (kbd "C-c C-p") #'git-rebase-todo-set-pick)
+    (define-key map (kbd "C-c C-r") #'git-rebase-todo-set-reword)
+    (define-key map (kbd "C-c C-e") #'git-rebase-todo-set-edit)
+    (define-key map (kbd "C-c C-s") #'git-rebase-todo-set-squash)
+    (define-key map (kbd "C-c C-f") #'git-rebase-todo-set-fixup)
+    (define-key map (kbd "C-c C-d") #'git-rebase-todo-set-drop)
+    (define-key map (kbd "C-c C-x") #'git-rebase-todo-insert-exec)
+    (define-key map (kbd "C-c C-b") #'git-rebase-todo-insert-break)
+    (define-key map (kbd "C-c C-l") #'git-rebase-todo-insert-label)
+    (define-key map (kbd "C-c C-t") #'git-rebase-todo-insert-reset)
+    (define-key map (kbd "C-c C-m") #'git-rebase-todo-insert-merge)
     map)
   "Keymap for Git Rebase buffers.")
 

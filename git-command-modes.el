@@ -284,22 +284,22 @@ This always returns a list of the form (BEGIN END-OR-NIL)."
 (defun git-rebase-todo-set-pick (&optional beg end)
   "Set the commands in the region from BEG to END to \"pick\"."
   (interactive (git-rebase-todo-region-or-point))
-  (git-rebase-todo-replace-command-in-region 'pick))
+  (git-rebase-todo-replace-command-in-region 'pick beg end))
 
 (defun git-rebase-todo-set-reword (&optional beg end)
   "Set the commands in the region from BEG to END to \"reword\"."
   (interactive (git-rebase-todo-region-or-point))
-  (git-rebase-todo-replace-command-in-region 'reword))
+  (git-rebase-todo-replace-command-in-region 'reword beg end))
 
 (defun git-rebase-todo-set-edit (&optional beg end)
   "Set the commands in the region from BEG to END to \"edit\"."
   (interactive (git-rebase-todo-region-or-point))
-  (git-rebase-todo-replace-command-in-region 'edit))
+  (git-rebase-todo-replace-command-in-region 'edit beg end))
 
 (defun git-rebase-todo-set-squash (&optional beg end)
   "Set the commands in the region from BEG to END to \"squash\"."
   (interactive (git-rebase-todo-region-or-point))
-  (git-rebase-todo-replace-command-in-region 'squash))
+  (git-rebase-todo-replace-command-in-region 'squash beg end))
 
 (defun git-rebase-todo-set-fixup (&optional beg end flag)
   "Set the commands in the region from BEG to END to \"fixup\".

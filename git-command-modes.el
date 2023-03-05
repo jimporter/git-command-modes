@@ -4,7 +4,7 @@
 
 ;; Author: Jim Porter
 ;; URL: https://github.com/jimporter/git-command-modes
-;; Version: 0.1-dev
+;; Version: 0.1-git
 ;; Keywords:
 ;; Package-Requires: ((emacs "27.1"))
 

@@ -151,6 +151,7 @@ PREFIX is a list of `rx' forms that should precede each command."
           (group (or (seq "Last commands done" (* nonl))
                      (seq "Next commands to do" (* nonl))
                      (seq "Changes" (* nonl))
+                     (seq "Submodule changes" (* nonl))
                      "Untracked files")
                  ":"))
      1 'git-command-section-heading t)

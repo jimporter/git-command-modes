@@ -167,6 +167,9 @@ PREFIX is a list of `rx' forms that should precede each command."
     ,@(git-rebase-todo--font-lock-keywords '("#" (+ space))))
   "Keywords to highlight in Git Commit mode.")
 
+(defvar git-commit-msg-mode-map (make-sparse-keymap)
+  "Keymap for Git Commit buffers.")
+
 ;;;###autoload
 (define-derived-mode git-commit-msg-mode text-mode "Git Commit"
   (setq-local font-lock-keywords '(git-common-syntax-table)
@@ -304,9 +307,11 @@ This always returns a list of the form (BEGIN END-OR-NIL)."
 (defun git-rebase-todo-set-fixup (&optional beg end flag)
   "Set the commands in the region from BEG to END to \"fixup\".
 
-With \\[universal-argument] prefix, set the \"-c\" flag (use the commit message of
-the current commit for the folded commit, and allow editing the
-message).  With two \\[universal-argument] prefixes, set the \"-C\" flag (use the
+With \\[universal-argument] prefix, set the \"-c\" flag (use the commit \
+message of the
+current commit for the folded commit, and allow editing the
+message).  With two \\[universal-argument] prefixes, set the \"-C\" flag (use \
+the
 commit message of the current commit, and don't edit the message)."
   (interactive (append (git-rebase-todo-region-or-point)
                        (list current-prefix-arg)))

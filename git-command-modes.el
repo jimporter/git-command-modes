@@ -66,8 +66,8 @@
 
 (defvar git-common-syntax-table
   (let ((table (make-syntax-table)))
-    (modify-syntax-entry ?# "<")
-    (modify-syntax-entry ?\n ">")
+    (modify-syntax-entry ?# "<" table)
+    (modify-syntax-entry ?\n ">" table)
     table)
   "Syntax table for Git command files.")
 
@@ -173,6 +173,7 @@ PREFIX is a list of `rx' forms that should precede each command."
 
 ;;;###autoload
 (define-derived-mode git-commit-msg-mode text-mode "Git Commit"
+  :syntax-table git-common-syntax-table
   (setq-local font-lock-keywords '(git-common-syntax-table)
               font-lock-defaults '(git-commit-msg-font-lock-keywords)
               font-lock-extra-managed-props '(git-rebase-todo-command))
@@ -414,6 +415,7 @@ after point."
 
 ;;;###autoload
 (define-derived-mode git-rebase-todo-mode nil "Git Rebase"
+  :syntax-table git-common-syntax-table
   (setq-local font-lock-keywords '(git-common-syntax-table)
               font-lock-defaults '(git-rebase-todo-font-lock-keywords)
               font-lock-extra-managed-props '(git-rebase-todo-command))

@@ -65,7 +65,7 @@
   "Face for command flags when rebasing.")
 
 (defvar git-common-syntax-table
-  (let ((table (make-syntax-table)))
+  (let ((table (make-syntax-table text-mode-syntax-table)))
     (modify-syntax-entry ?# "<" table)
     (modify-syntax-entry ?\n ">" table)
     table)

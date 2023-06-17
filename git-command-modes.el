@@ -6,7 +6,7 @@
 ;; URL: https://github.com/jimporter/git-command-modes
 ;; Version: 0.1-git
 ;; Keywords:
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify it
 ;; under the terms of the GNU General Public License as published by the Free
@@ -34,8 +34,11 @@
 (defface git-command-section-heading '((t :inherit font-lock-keyword-face))
   "Face for section headings.")
 
-(defface git-commit '((t :inherit font-lock-variable-name-face))
+(defface git-commit-hash '((t :inherit font-lock-variable-name-face))
   "Face for commit hashes.")
+
+(defface git-commit-message '((t :inherit font-lock-comment-face))
+  "Face for commit messages.")
 
 (defface git-file-deleted '((t :inherit font-lock-warning-face))
   "Face for deleted file indicator.")
@@ -49,20 +52,50 @@
 (defface git-file-renamed '((t :inherit font-lock-builtin-face))
   "Face for renamed file indicator.")
 
-(defface git-rebase-command '((t :inherit font-lock-keyword-face))
-  "Face for commands when rebasing.")
+(defface git-rebase-keyword '((t :inherit font-lock-keyword-face))
+  "Face for keywords when rebasing.")
 
-(defface git-rebase-drop-command '((t :inherit font-lock-warning-face))
-  "Face for the \"drop\" command when rebasing.")
+(defface git-rebase-pick-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"pick\" keyword when rebasing.")
 
-(defface git-rebase-break-command '((t :inherit font-lock-type-face))
-  "Face for the \"break\" command when rebasing.")
+(defface git-rebase-reword-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"reword\" keyword when rebasing.")
+
+(defface git-rebase-edit-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"edit\" keyword when rebasing.")
+
+(defface git-rebase-squash-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"squash\" keyword when rebasing.")
+
+(defface git-rebase-drop-keyword '((t :inherit font-lock-warning-face))
+  "Face for the \"drop\" keyword when rebasing.")
+
+(defface git-rebase-label-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"label\" keyword when rebasing.")
+
+(defface git-rebase-reset-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"reset\" keyword when rebasing.")
+
+(defface git-rebase-exec-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"exec\" keyword when rebasing.")
+
+(defface git-rebase-break-keyword '((t :inherit font-lock-type-face))
+  "Face for the \"break\" keyword when rebasing.")
+
+(defface git-rebase-fixup-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"fixup\" keyword when rebasing.")
+
+(defface git-rebase-merge-keyword '((t :inherit git-rebase-keyword))
+  "Face for the \"merge\" keyword when rebasing.")
 
 (defface git-rebase-label '((t :inherit font-lock-builtin-face))
   "Face for labels when rebasing.")
 
 (defface git-rebase-flag '((t :inherit font-lock-constant-face))
   "Face for command flags when rebasing.")
+
+(defface git-rebase-exec-command '((t :inherit font-lock-constant-face))
+  "Face for the \"exec\" command to run when rebasing.")
 
 (defvar git-common-syntax-table
   (let ((table (make-syntax-table text-mode-syntax-table)))
@@ -71,80 +104,61 @@
     table)
   "Syntax table for Git command files.")
 
-(defun git-rebase-todo--match-keyword (prefix name shorthand &optional face)
-  "Return a font-lock matcher for the Git Rebase keyword NAME.
-SHORTHAND is the single-character shorthand for the keyword.
-PREFIX is a list of `rx' forms that should precede the keyword.
-FACE, if non-nil, is the face to use for the keyword; otherwise,
-use `git-rebase-command'."
-  `(,(rx-to-string `(seq ,@prefix
-                         (group (or ,name ,shorthand))
-                         symbol-end))
-    (1 (list 'face ',(or face 'git-rebase-command)
-             'git-rebase-todo-command ',(intern name))
-       t)))
-
-(defconst git-rebase-todo--commit-rx
-  '(seq symbol-start (>= 5 hex) symbol-end)
-  "An `rx' expression recognizing a Git commit hash.")
-
-(defconst git-rebase-todo--match-commit
-  `(,(rx-to-string `(seq point (+ space)
-                         (group ,git-rebase-todo--commit-rx)))
-    nil nil (1 'git-commit t))
-  "A font-lock highlighter matching a Git commit hash following a space.")
-
-(defconst git-rebase-todo--match-label
-  `(,(rx-to-string '(seq point (+ space)
-                         (group symbol-start
-                                (+ alnum)
-                                symbol-end)))
-    nil nil (1 'git-rebase-label t))
-  "A font-lock highlighter matching a Git label following a space.")
-
 (defun git-rebase-todo--font-lock-keywords (prefix)
   "Return a list of font-lock keywords for Git Rebase Todo commands.
-PREFIX is a list of `rx' forms that should precede each command."
-  `(;; Commands taking a commit.
-    ,@(let ((cmds '(("pick"   "p")
-                    ("reword" "r")
-                    ("edit"   "e")
-                    ("squash" "s")
-                    ("drop"   "d" 'git-rebase-drop-command))))
-        (mapcar (lambda (cmd)
-                  `(,@(apply #'git-rebase-todo--match-keyword prefix cmd)
-                    ,git-rebase-todo--match-commit
-                    (,(rx-to-string '(* nonl))
-                     nil nil (0 'default t))))
-                cmds))
-    ;; Commands taking a label.
-    ,@(let ((cmds '(("label" "l")
-                    ("reset" "t"))))
-        (mapcar (lambda (cmd)
-                  `(,@(apply #'git-rebase-todo--match-keyword prefix cmd)
-                    ,git-rebase-todo--match-label))
-                cmds))
-    ;; Miscellaneous commands.
-    ,@(let ((cmds '(("exec" "x")
-                    ("break" "b" 'git-rebase-break-command))))
-        (mapcar (lambda (cmd)
-                  (apply #'git-rebase-todo--match-keyword prefix cmd))
-                cmds))
-    ;; Fixup command.
-    (,@(git-rebase-todo--match-keyword prefix "fixup" "f")
-     (,(rx-to-string '(seq point (+ space)
-                           (group (or "-c" "-C"))))
-      nil nil (0 '(face nil git-rebase-todo-command fixup) t)
-      (1 'git-rebase-flag t))
-     ,git-rebase-todo--match-commit)
-    ;; Merge command.
-    (,@(git-rebase-todo--match-keyword prefix "merge" "m")
-     (,(rx-to-string `(seq point (+ space)
-                           (group (or "-c" "-C"))
-                           (+ space)
-                           (group ,git-rebase-todo--commit-rx)))
-      nil nil (1 'git-rebase-flag t) (2 'git-commit t))
-     ,git-rebase-todo--match-label)))
+PREFIX is a regular expression that should precede each command."
+  (rx-let ((symbol (expr)
+             (seq symbol-start expr symbol-end))
+           (rebase-command (cmd)
+             (seq (or (literal (car cmd)) (literal (cadr cmd))) symbol-end))
+           (commit-sha (symbol (>= 5 hex))))
+    ;; The anchored highlighters here are a bit tricky: prior to checking the
+    ;; anchors, we advance point past any whitespace to the very beginning of
+    ;; any potential arguments. Then, we do the same when finishing an anchored
+    ;; highlighter. This means that anchors checking for arguments like "-c"
+    ;; only run once, as we'd want.
+    (let* ((commit-anchor
+            `(,(rx point (group commit-sha)
+                   (? (+ space) (group (* nonl))))
+              nil nil
+              (1 'git-commit-hash t)
+              (2 'git-commit-message t t)))
+           (label-anchor
+            `(,(rx point (group (* nonl)))
+              nil nil (1 'git-rebase-label t)))
+           (cmds `(;; Commands taking a commit.
+                   ("pick"   "p" ,commit-anchor)
+                   ("reword" "r" ,commit-anchor)
+                   ("edit"   "e" ,commit-anchor)
+                   ("squash" "s" ,commit-anchor)
+                   ("drop"   "d" ,commit-anchor)
+                   ;; Commands taking a label.
+                   ("label"  "l" ,label-anchor)
+                   ("reset"  "t" ,label-anchor)
+                   ;; Other commands.
+                   ("exec"   "x"
+                    (,(rx point (group (* nonl)))
+                     nil nil (1 'git-rebase-exec-command t)))
+                   ("break"  "b")
+                   ("fixup"  "f"
+                    (,(rx point (group (symbol (or "-c" "-C"))))
+                     nil (re-search-forward (rx point (* space)))
+                     (1 'git-rebase-flag t))
+                    ,commit-anchor)
+                   ("merge"  "m"
+                    (,(rx point (group (symbol (or "-c" "-C"))) (+ space)
+                          (group commit-sha))
+                     nil (re-search-forward (rx point (* space)))
+                     (1 'git-rebase-flag t)
+                     (2 'git-commit-hash t))
+                    ,label-anchor))))
+      (mapcar (lambda (cmd)
+                `(,(rx (group (regexp prefix) (rebase-command cmd)) (* space))
+                  (1 '( face ,(intern (format "git-rebase-%s-keyword"
+                                              (car cmd)))
+                        git-rebase-todo-command ,(intern (car cmd))))
+                  ,@(cddr cmd)))
+              cmds))))
 
 (defvar git-commit-msg-font-lock-keywords
   `((,(rx line-start "#" (+ space)
@@ -165,7 +179,7 @@ PREFIX is a list of `rx' forms that should precede each command."
                     (1 ,(cdr change) t)
                     (".*" nil nil (0 'default t))))
                 changes))
-    ,@(git-rebase-todo--font-lock-keywords '("#" (+ space))))
+    ,@(git-rebase-todo--font-lock-keywords (rx line-start "#" (+ space))))
   "Keywords to highlight in Git Commit mode.")
 
 (defvar git-commit-msg-mode-map (make-sparse-keymap)
@@ -184,7 +198,7 @@ PREFIX is a list of `rx' forms that should precede each command."
 (add-to-list 'auto-mode-alist '("/COMMIT_EDITMSG\\'" . git-commit-msg-mode))
 
 (defvar git-rebase-todo-font-lock-keywords
-  (git-rebase-todo--font-lock-keywords '(line-start))
+  (git-rebase-todo--font-lock-keywords (rx line-start))
   "Keywords to highlight in Git Rebase mode.")
 
 (defun git-rebase-todo-move-up (&optional lines)

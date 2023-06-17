@@ -25,7 +25,7 @@
 
 ;; Major modes for Git commands.
 
-(eval-when-compile (require 'subr-x))
+(require 'compat)
 
 (defgroup git-command-modes nil
   "Major modes for Git commands"
@@ -182,8 +182,7 @@ PREFIX is a regular expression that should precede each command."
     ,@(git-rebase-todo--font-lock-keywords (rx line-start "#" (+ space))))
   "Keywords to highlight in Git Commit mode.")
 
-(defvar git-commit-msg-mode-map (make-sparse-keymap)
-  "Keymap for Git Commit buffers.")
+(defvar-keymap git-commit-msg-mode-map)
 
 ;;;###autoload
 (define-derived-mode git-commit-msg-mode text-mode "Git Commit"
@@ -399,25 +398,22 @@ after point."
   ;; key binding like C-c C-M?
   (git-rebase-todo-insert-command-at-point 'merge point name after))
 
-(defvar git-rebase-todo-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "M-<up>") #'git-rebase-todo-move-up)
-    (define-key map (kbd "ESC <up>") #'git-rebase-todo-move-up)
-    (define-key map (kbd "M-<down>") #'git-rebase-todo-move-down)
-    (define-key map (kbd "ESC <down>") #'git-rebase-todo-move-down)
-    (define-key map (kbd "C-c C-p") #'git-rebase-todo-set-pick)
-    (define-key map (kbd "C-c C-r") #'git-rebase-todo-set-reword)
-    (define-key map (kbd "C-c C-e") #'git-rebase-todo-set-edit)
-    (define-key map (kbd "C-c C-s") #'git-rebase-todo-set-squash)
-    (define-key map (kbd "C-c C-f") #'git-rebase-todo-set-fixup)
-    (define-key map (kbd "C-c C-d") #'git-rebase-todo-set-drop)
-    (define-key map (kbd "C-c C-x") #'git-rebase-todo-insert-exec)
-    (define-key map (kbd "C-c C-b") #'git-rebase-todo-insert-break)
-    (define-key map (kbd "C-c C-l") #'git-rebase-todo-insert-label)
-    (define-key map (kbd "C-c C-t") #'git-rebase-todo-insert-reset)
-    (define-key map (kbd "C-c C-m") #'git-rebase-todo-insert-merge)
-    map)
-  "Keymap for Git Rebase buffers.")
+(defvar-keymap git-rebase-todo-mode-map
+  "M-<up>"     #'git-rebase-todo-move-up
+  "ESC <up>"   #'git-rebase-todo-move-up
+  "M-<down>"   #'git-rebase-todo-move-down
+  "ESC <down>" #'git-rebase-todo-move-down
+  "C-c C-p"    #'git-rebase-todo-set-pick
+  "C-c C-r"    #'git-rebase-todo-set-reword
+  "C-c C-e"    #'git-rebase-todo-set-edit
+  "C-c C-s"    #'git-rebase-todo-set-squash
+  "C-c C-f"    #'git-rebase-todo-set-fixup
+  "C-c C-d"    #'git-rebase-todo-set-drop
+  "C-c C-x"    #'git-rebase-todo-insert-exec
+  "C-c C-b"    #'git-rebase-todo-insert-break
+  "C-c C-l"    #'git-rebase-todo-insert-label
+  "C-c C-t"    #'git-rebase-todo-insert-reset
+  "C-c C-m"    #'git-rebase-todo-insert-merge)
 
 (easy-menu-define git-rebase-todo-menu-map git-rebase-todo-mode-map
   "Menu for Git Rebase buffers."

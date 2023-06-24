@@ -153,10 +153,11 @@ PREFIX is a regular expression that should precede each command."
                      (2 'git-commit-hash t))
                     ,label-anchor))))
       (mapcar (lambda (cmd)
-                `(,(rx (group (regexp prefix) (rebase-command cmd)) (* space))
+                `(,(rx (regexp prefix) (group (rebase-command cmd)) (* space))
                   (1 '( face ,(intern (format "git-rebase-%s-keyword"
                                               (car cmd)))
-                        git-rebase-todo-command ,(intern (car cmd))))
+                        git-rebase-todo-command ,(intern (car cmd)))
+                     t)
                   ,@(cddr cmd)))
               cmds))))
 

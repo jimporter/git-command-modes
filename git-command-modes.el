@@ -37,7 +37,7 @@
 (defface git-commit-hash '((t :inherit font-lock-variable-name-face))
   "Face for commit hashes.")
 
-(defface git-commit-message '((t :inherit font-lock-comment-face))
+(defface git-commit-message nil
   "Face for commit messages.")
 
 (defface git-file-deleted '((t :inherit font-lock-warning-face))

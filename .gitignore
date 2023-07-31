@@ -1,3 +1,4 @@
-/.deps
 *.elc
-git-command-modes-autoloads.el
+/.deps
+/git-command-modes-autoloads.el
+/git-command-modes-pkg.el

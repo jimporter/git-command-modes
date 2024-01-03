@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Jim Porter
+# Copyright (C) 2022-2024 Jim Porter
 
 # This file is NOT part of GNU Emacs.
 

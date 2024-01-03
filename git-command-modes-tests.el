@@ -1,6 +1,6 @@
 ;;; git-command-modes-tests.el --- Tests for git-command-modes -*- lexical-binding: t -*-
 
-;; Copyright (C) 2023 Jim Porter
+;; Copyright (C) 2022-2024 Jim Porter
 
 ;; Author: Jim Porter
 ;; URL: https://github.com/jimporter/git-command-modes

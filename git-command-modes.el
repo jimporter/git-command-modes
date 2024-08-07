@@ -197,6 +197,17 @@ PREFIX is a regular expression that should precede each command."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/COMMIT_EDITMSG\\'" . git-commit-msg-mode))
 
+;;;###autoload
+(define-derived-mode git-tag-msg-mode text-mode "Git Tag"
+  :syntax-table git-common-syntax-table
+  (setq-local font-lock-keywords '(git-common-syntax-table))
+  (setq-local syntax-propertize-function
+              (syntax-propertize-rules (".\\(#\\)" (1 ".")))))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("/TAG_EDITMSG\\'" . git-tag-msg-mode))
+
+
 (defvar git-rebase-todo-font-lock-keywords
   (git-rebase-todo--font-lock-keywords (rx line-start))
   "Keywords to highlight in Git Rebase mode.")

@@ -271,8 +271,8 @@ command.  This is useful if the command takes optional flags."
           (unless (git-rebase-todo-commit-command-p old-command t)
             (user-error "Not a commit"))
           (when (git-rebase-todo-fold-command-p command)
-            (if-let ((prev-point (previous-single-property-change
-                                  (point) 'git-rebase-todo-command)))
+            (if-let* ((prev-point (previous-single-property-change
+                                   (point) 'git-rebase-todo-command)))
                 (unless (git-rebase-todo-commit-command-p
                          (get-text-property (1- prev-point)
                                             'git-rebase-todo-command))

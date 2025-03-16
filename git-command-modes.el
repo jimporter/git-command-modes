@@ -1,6 +1,6 @@
 ;;; git-command-modes.el --- Major modes for Git commands -*- lexical-binding: t -*-
 
-;; Copyright (C) 2022-2024 Jim Porter
+;; Copyright (C) 2022-2025 Jim Porter
 
 ;; Author: Jim Porter
 ;; URL: https://github.com/jimporter/git-command-modes
